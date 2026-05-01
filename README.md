@@ -17,7 +17,7 @@ OpenClaw 模型配置管理技能，用于统一维护 `openclaw.json` 中的模
 openclaw skills install openclaw-model-manager
 
 # 或手动克隆到 skills 目录
-git clone https://github.com/the2015/openclaw-model-manager.git ~/.openclaw/workspace/skills/openclaw-model-manager
+git clone https://github.com/yikexiaoyao/openclaw-model-manager.git ~/.openclaw/workspace/skills/openclaw-model-manager
 ```
 
 ## 命令列表
