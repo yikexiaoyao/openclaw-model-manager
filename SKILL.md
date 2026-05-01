@@ -1,7 +1,7 @@
 ---
 name: model-manager
 description: OpenClaw 模型配置管理技能。用于添加、删除、更新、查看、切换、检测模型配置。当用户需要：(1) 添加新模型到配置 (2) 删除模型 (3) 更新模型参数（contextWindow、maxTokens 等）(4) 查看当前模型列表 (5) 切换主模型 (6) 检查模型可用状态（测试连接）(7) 修复模型配置问题时使用此技能。
-metadata: {"openclaw": {"emoji": "🔧", "always": false, "requires": {"bins": [], "env": []}}}
+metadata: {"openclaw": {"emoji": "🔧", "always": false, "requires": {"bins": ["python3", "curl"], "env": []}}}
 ---
 
 # Model Manager
@@ -30,6 +30,23 @@ OpenClaw 模型配置管理技能，用于统一维护 `openclaw.json` 中的模
 | `skill models update <序号> <参数> <值>` | 更新模型参数 |
 | `skill models fix` | 自动检测并修复配置错误 |
 | `skill models help` | 显示帮助信息 |
+
+---
+
+## 快速开始
+
+**触发方式**：用户发送以下命令时自动激活本技能
+
+```skill models list        # 查看模型列表
+skill models set 2     # 切换到第 2 个模型
+skill models check     # 检测所有模型连通性
+skill models help      # 显示帮助
+```
+
+**执行前必做**：
+1. 读取 `openclaw.json` 确认配置结构
+2. 写入操作前保存备份到 `openclaw.json.bak`
+3. 修改后验证 `session_status` 确认生效
 
 ---
 
@@ -334,6 +351,229 @@ json.dump(config, open(config_path, "w"), indent=2, ensure_ascii=False)
 if target == old_primary:
     /model <new_primary>
     session_status 验证
+```
+
+---
+
+## `skill models list` 实现逻辑
+
+### 流程
+
+```
+① 读取 openclaw.json
+  ↓
+② 提取 models 列表（保持顺序）
+  ↓
+③ 获取 primary 和 fallbacks
+  ↓
+④ 遍历输出：序号 + 模型名 + 选中状态
+```
+
+### 输出格式
+
+```
+已配置模型列表：
+1.  custom-127-0-0-1-8000/Qwen3.5-9B-MLX-4bit [当前]
+2.  bailian/qwen3.6-plus
+3.  bailian/qwen3.5-plus
+4.  bailian/glm-4.7
+```
+
+### 状态标记
+
+| 标记 | 含义 |
+|------|------|
+| `[当前]` | 当前主模型（primary） |
+| `[备用]` | 当前备用模型（在 fallbacks 中） |
+
+---
+
+## `skill models check` 实现逻辑
+
+### 流程
+
+```
+① 确认 check-models.sh 脚本存在（scripts/check-models.sh）
+  ↓
+② 执行脚本，传入 openclaw.json 路径
+  ↓
+③ 输出结果表格
+```
+
+### 脚本调用
+
+```bash
+bash <skill-dir>/scripts/check-models.sh
+```
+
+或带配置路径：
+
+```bash
+bash <skill-dir>/scripts/check-models.sh ~/.openclaw/openclaw.json
+```
+
+### 输出示例
+
+```
+模型连通性检测 (3次测试，间隔3秒)
+============================================================
+  1. ✅ local/qwen3.5-9b (280ms) [备用]
+  2. ✅ bailian/qwen3.6-plus (4691ms) [当前]
+  3. ⚠️ bailian/glm-4.7 (502 200 200) (2/3)
+  4. ❌ bailian/glm-5 (timeout timeout timeout)
+```
+
+---
+
+## `skill models status` 实现逻辑
+
+### 流程
+
+```
+① 读取 openclaw.json
+  ↓
+② 提取 primary, fallbacks, models 数量
+  ↓
+③ 格式化输出摘要
+```
+
+### 输出示例
+
+```
+当前模型状态：
+  主模型：bailian/qwen3.6-plus
+  备用模型：custom-127-0-0-1-8000/Qwen3.5-9B-MLX-4bit
+  已配置：4 个模型
+  配置路径：~/.openclaw/openclaw.json
+```
+
+---
+
+## `skill models add` 实现逻辑
+
+### 流程
+
+```
+输入: skill models add <provider>/<model-id>
+  ↓
+① 解析模型 ID（provider 和 model-id）
+  ↓
+② 检查是否已存在 → 已存在则报错
+  ↓
+③ 查找或创建 provider 配置
+  ↓
+④ 添加到 models 列表
+  ↓
+⑤ 写回配置
+```
+
+### 新增 provider 模板
+
+```json
+{
+  "providers": {
+    "<provider>": {
+      "baseUrl": "<api-base-url>",
+      "apiKey": "<api-key>",
+      "api": "openai-completions",
+      "models": [{
+        "id": "<model-id>",
+        "name": "<model-name>",
+        "contextWindow": 128000,
+        "maxTokens": 8192,
+        "input": ["text"],
+        "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0}
+      }]
+    }
+  }
+}
+```
+
+---
+
+## `skill models update` 实现逻辑
+
+### 流程
+
+```
+输入: skill models update <序号> <参数> <值>
+  ↓
+① 序号 → 模型 ID
+  ↓
+② 解析参数和值
+  ↓
+③ 更新模型配置
+  ↓
+④ 写回
+```
+
+### 支持的参数
+
+| 参数 | 类型 | 示例 |
+|------|------|------|
+| contextWindow | int | `32768` |
+| maxTokens | int | `8192` |
+| reasoning | bool | `true/false` |
+| input | array | `text,image` |
+
+---
+
+## `skill models fix` 实现逻辑
+
+### 检测项
+
+```python
+def check_config(cfg):
+    issues = []
+    
+    # 1. primary 是否存在于 models 中
+    primary = cfg["agents"]["defaults"]["model"]["primary"]
+    models = cfg["agents"]["defaults"]["models"]
+    if primary not in models:
+        issues.append(f"主模型 {primary} 不存在于配置中")
+    
+    # 2. fallbacks 是否包含 primary
+    fallbacks = cfg["agents"]["defaults"]["model"]["fallbacks"]
+    if primary in fallbacks:
+        issues.append("fallbacks 中包含 primary，已自动移除")
+        fallbacks.remove(primary)
+    
+    # 3. fallback 是否存在
+    for fb in list(fallbacks):
+        if fb not in models:
+            issues.append(f"备用模型 {fb} 不存在，已移除")
+            fallbacks.remove(fb)
+    
+    # 4. provider baseUrl 是否配置
+    providers = cfg.get("models", {}).get("providers", {})
+    for model_key in models:
+        provider_id = model_key.split("/")[0]
+        if provider_id not in providers:
+            issues.append(f"provider {provider_id} 未配置")
+    
+    return issues
+```
+
+---
+
+## `skill models help` 实现逻辑
+
+### 输出
+
+```
+模型配置管理 - 帮助
+
+用法:
+  skill models list                          - 查看模型列表
+  skill models set <序号/名称>               - 切换主模型
+  skill models set <序号> fallback <序号>    - 切换 + 兜底
+  skill models status                        - 查看当前状态
+  skill models check                         - 连通性检测
+  skill models add <provider/model>          - 添加模型
+  skill models delete <序号/名称>            - 删除模型
+  skill models update <序号> <参数> <值>     - 更新参数
+  skill models fix                           - 修复配置错误
+  skill models help                          - 显示此帮助
 ```
 
 ---
