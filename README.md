@@ -17,7 +17,7 @@ OpenClaw 模型配置管理技能，用于统一维护 `openclaw.json` 中的模
 openclaw skills install openclaw-model-manager
 
 # 或手动克隆到 skills 目录
-git clone https://github.com/yikexiaoyao/openclaw-model-manager.git ~/.openclaw/workspace/skills/openclaw-model-manager
+git clone https://github.com/yikexiaoyao/openclaw-model-manager.git <your-skills-dir>/openclaw-model-manager
 ```
 
 ## 命令列表
@@ -43,9 +43,9 @@ git clone https://github.com/yikexiaoyao/openclaw-model-manager.git ~/.openclaw/
 ```
 模型连通性检测 (3次测试，间隔3秒)
 ============================================================
-  1. ✅ custom-127-0-0-1-8000/Qwen3.5-9B-MLX-4bit (280ms) [备用]
+  1. ✅ local/qwen3.5-9b (280ms) [备用]
   2. ✅ bailian/qwen3.6-plus (4691ms) [当前]
-  3. ✅ bailian/qwen3.5-plus (3527ms)
+  3. ✅ bailian/glm-4.7 (3527ms)
   ...
 ```
 
