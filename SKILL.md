@@ -37,10 +37,11 @@ OpenClaw 模型配置管理技能，用于统一维护 `openclaw.json` 中的模
 
 **触发方式**：用户发送以下命令时自动激活本技能
 
-```skill models list        # 查看模型列表
-skill models set 2     # 切换到第 2 个模型
-skill models check     # 检测所有模型连通性
-skill models help      # 显示帮助
+```bash
+skill models list        # 查看模型列表
+skill models set 2       # 切换到第 2 个模型
+skill models check       # 检测所有模型连通性
+skill models help        # 显示帮助
 ```
 
 **执行前必做**：
@@ -373,7 +374,7 @@ if target == old_primary:
 
 ```
 已配置模型列表：
-1.  custom-127-0-0-1-8000/Qwen3.5-9B-MLX-4bit [当前]
+1.  local/qwen3.5-9b [当前]
 2.  bailian/qwen3.6-plus
 3.  bailian/qwen3.5-plus
 4.  bailian/glm-4.7
@@ -442,7 +443,7 @@ bash <skill-dir>/scripts/check-models.sh ~/.openclaw/openclaw.json
 ```
 当前模型状态：
   主模型：bailian/qwen3.6-plus
-  备用模型：custom-127-0-0-1-8000/Qwen3.5-9B-MLX-4bit
+  备用模型：local/qwen3.5-9b
   已配置：4 个模型
   配置路径：~/.openclaw/openclaw.json
 ```
