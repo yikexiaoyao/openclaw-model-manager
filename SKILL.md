@@ -1,5 +1,5 @@
 ---
-name: model-manager
+name: openclaw-model-manager
 description: OpenClaw 模型配置管理技能。用于添加、删除、更新、查看、切换、检测模型配置。
 metadata:
   openclaw:
