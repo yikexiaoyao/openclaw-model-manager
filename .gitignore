@@ -1,0 +1,17 @@
+# ClawHub metadata
+.clawhub/
+
+# Python
+*.pyc
+__pycache__/
+
+# Node.js
+node_modules/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Config files
+config.json
+.env
