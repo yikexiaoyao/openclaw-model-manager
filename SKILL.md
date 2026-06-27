@@ -1,6 +1,6 @@
 ---
 name: openclaw-model-manager
-description: OpenClaw 模型配置管理技能。用于添加、删除、更新、查看、切换、检测模型配置。
+description: OpenClaw 模型配置管理技能。用于添加、删除、更新、查看、切换、检测模型配置。触发指令：openclaw models list、openclaw models set、openclaw models status、openclaw models help。
 metadata:
   openclaw:
     emoji: "🔧"
@@ -22,8 +22,6 @@ triggers:
   - 模型列表
   - 模型配置
   - model manager
-  - change model
-  - model status
 ---
 
 # Model Manager
