@@ -26,39 +26,187 @@ triggers:
 
 # Model Manager
 
-OpenClaw 模型配置管理技能，用于统一维护 `openclaw.json` 中的模型与 provider 配置。
+OpenClaw 模型配置管理技能，用于统一维护模型与 provider 配置。
 
-## 配置文件位置
+---
+
+## 前置条件
+
+| 项目 | 要求 | 检查方式 |
+|------|------|----------|
+| OpenClaw | >= v2026.6.0 | `openclaw --version` |
+| 配置文件 | `~/.openclaw/openclaw.json` 存在 | `ls ~/.openclaw/openclaw.json` |
+| 至少 1 个模型 | providers 下配置了至少一个模型 | `skill models list` |
+
+---
+
+## 命令列表
+
+| 序号 | 命令 | 用途 | 输出格式 |
+|------|------|------|----------|
+| 1 | `skill models list` | 查看已配置模型列表 | 编号 + 模型名 + 状态标记 |
+| 2 | `skill models set <序号/模型名>` | 切换主模型 | 确认 + 生效状态 |
+| 3 | `skill models set <主模型> fallback <兜底>` | 切换主模型并指定兜底 | 确认 + 兜底链 |
+| 4 | `skill models status` | 查看主模型/备用模型/配置摘要 | 结构化状态卡 |
+| 5 | `skill models check` | 检查模型连通性 | ✅/❌ + 延迟 |
+| 6 | `skill models test` | 发送测试请求验证响应 | ✅/❌ + 响应摘要 |
+| 7 | `skill models add <模型名>` | 添加新模型配置 | 确认 + 新配置摘要 |
+| 8 | `skill models delete <序号/模型名>` | 删除模型配置 | 确认 + 剩余模型数 |
+| 9 | `skill models update <序号> <参数> <值>` | 更新模型参数 | 确认 + 变更内容 |
+| 10 | `skill models fix` | 自动检测并修复配置错误 | 修复报告 |
+| 11 | `skill models help` | 显示帮助信息 | 命令列表 |
+
+---
+
+## 输出格式规范
+
+### `skill models list` 输出
+
+```
+当前模型列表（共 N 个）
+
+ # │ 模型 ID                              │ 状态
+───┼──────────────────────────────────────┼────────
+ 1 │ bailian/qwen3.7-plus                │ ✅ 当前
+ 2 │ custom-127-0-0-1-8888/Qwen3.5-9B   │ ⏸ 备用
+ 3 │ bailian/qwen-max                    │ ○ 待用
+```
+
+状态标记说明：
+- ✅ 当前 — 主模型（primary）
+- ⏸ 备用 — 兜底链中的模型（fallbacks）
+- ○ 待用 — 已配置但未激活
+
+### `skill models status` 输出
+
+```
+模型状态
+
+  主模型:   ✅ bailian/qwen3.7-plus
+  兜底链:   ⏸ custom-127-0-0-1-8888/Qwen3.5-9B-MLX-4bit
+  总配置:   3 个模型
+  配置文件: ~/.openclaw/openclaw.json
+```
+
+### `skill models check` 输出
+
+```
+模型连通性检查
+
+ # │ 模型 ID                  │ 状态    │ 延迟
+───┼──────────────────────────┼─────────┼──────
+ 1 │ bailian/qwen3.7-plus    │ ✅ OK   │ 31ms
+ 2 │ custom-.../Qwen3.5-9B   │ ❌ OFF  │ —
+```
+
+---
+
+## 快速开始
+
+```bash
+# 1. 查看当前所有模型
+skill models list
+
+# 2. 切换到第 2 个模型
+skill models set 2
+
+# 3. 查看状态
+skill models status
+
+# 4. 检查连通性
+skill models check
+```
+
+---
+
+## 常见用例
+
+| 场景 | 命令 | 说明 |
+|------|------|------|
+| 切换到云端模型 | `skill models set 1` | 按编号切换 |
+| 切换到本地模型 | `skill models set 2` | 按编号切换 |
+| 云端主 + 本地兜底 | `skill models set 1 fallback 2` | 本地↔云端互补 |
+| 添加新模型 | `skill models add bailian/qwen-max` | 自动写入配置 |
+| 删除不用的模型 | `skill models delete 3` | 自动处理关联 |
+| 检测并修复错误 | `skill models fix` | 一键修复 |
+
+---
+
+## 安装与部署
+
+### 方式 A：从 ClawHub 安装（推荐）
+
+```bash
+# 搜索技能
+openclaw skills search openclaw-model-manager
+
+# 安装
+openclaw skills install openclaw-model-manager
+
+# 验证
+openclaw skills list | grep model-manager
+```
+
+### 方式 B：本地部署
+
+```bash
+# 1. 创建技能目录
+mkdir -p ~/.openclaw/workspace/skills/openclaw-model-manager
+
+# 2. 将 SKILL.md 放入目录
+cp SKILL.md ~/.openclaw/workspace/skills/openclaw-model-manager/
+
+# 3. 验证安装
+openclaw skills list | grep model-manager
+```
+
+### 安装后验证
+
+| 检查项 | 命令 | 预期结果 |
+|--------|------|----------|
+| 技能状态 | `openclaw skills list` | `✓ ready │ 🔧 openclaw-model-manager` |
+| 触发测试 | `skill models list` | 显示当前模型列表 |
+| 配置文件 | `ls ~/.openclaw/openclaw.json` | 文件存在 |
+
+### 更新技能
+
+```bash
+# 从 ClawHub 更新
+openclaw skills update openclaw-model-manager
+
+# 或手动覆盖 SKILL.md 后重启 Gateway
+openclaw gateway restart
+```
+
+### 卸载技能
+
+```bash
+# 从 ClawHub 卸载
+openclaw skills uninstall openclaw-model-manager
+
+# 或手动删除目录
+rm -rf ~/.openclaw/workspace/skills/openclaw-model-manager
+```
+
+---
+
+## 配置文件
 
 ```
 ~/.openclaw/openclaw.json
 ```
 
-## 命令列表
-
-| 命令 | 用途 |
-|------|------|
-| `skill models list` | 查看已配置模型列表（带序号、选中状态、连接状态） |
-| `skill models set <序号/模型名>` | 切换主模型 |
-| `skill models set <序号/模型名> fallback <序号/模型名>` | 切换主模型并指定兜底 |
-| `skill models set <序号/模型名> fallback <序号/模型名>,<序号/模型名>` | 切换主模型并指定多个兜底（链式） |
-| `skill models status` | 查看主模型/备用模型/配置摘要 |
-| `skill models check` | 检查模型连通性（测试连接） |
-| `skill models test` | 发送测试请求验证响应 |
-| `skill models add <模型名>` | 添加新模型配置 |
-| `skill models delete <序号/模型名>` | 删除模型配置 |
-| `skill models update <序号> <参数> <值>` | 更新模型参数 |
-| `skill models fix` | 自动检测并修复配置错误 |
-| `skill models help` | 显示帮助信息 |
-
----
-
-## 数据结构
-
-```
-agents.defaults.model:
-  primary: "provider/model-id"           # 主模型
-  fallbacks: ["provider/model-id", ...]   # 兜底链（有序数组，可为空）
+```json
+{
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "provider/model-id",
+        "fallbacks": ["provider/model-id"]
+      }
+    }
+  }
+}
 ```
 
 fallbacks 按顺序尝试：primary 失败 → fallbacks[0] → fallbacks[1] → ...
